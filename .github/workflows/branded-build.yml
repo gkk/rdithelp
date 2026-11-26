@@ -155,11 +155,11 @@ jobs:
 
       - name: Create DMG
         run: |
-          CREATE_DMG="$(readlink -f "$(command -v create-dmg)")"
-          sed -i -e 's/MAXIMUM_UNMOUNTING_ATTEMPTS=3/MAXIMUM_UNMOUNTING_ATTEMPTS=7/' "$CREATE_DMG"
           APP_PATH=$(find ./flutter/build/macos/Build/Products/Release -maxdepth 1 -name "*.app" | head -n 1)
-          APP_BASENAME=$(basename "$APP_PATH")
-          create-dmg --icon "$APP_BASENAME" 200 190 --hide-extension "$APP_BASENAME" --window-size 800 400 --app-drop-link 600 185 "ITHelp-macos-${{ matrix.job.arch }}.dmg" "$APP_PATH"
+          mkdir -p dmg_stage
+          cp -R "$APP_PATH" dmg_stage/
+          ln -s /Applications dmg_stage/Applications
+          hdiutil create -volname "${{ github.event.inputs.app_name }}" -srcfolder dmg_stage -ov -format UDZO "ITHelp-macos-${{ matrix.job.arch }}.dmg"
 
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
