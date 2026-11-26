@@ -142,7 +142,6 @@ jobs:
 
       - name: Build rustdesk
         run: |
-          sed -i '' 's/RustDesk\.app/ITHelp4You.app/g' build.py
           MIN_MACOS_VERSION="12.3"
           sed -i -e "s/MACOSX_DEPLOYMENT_TARGET\=[0-9]*.[0-9]*/MACOSX_DEPLOYMENT_TARGET=${MIN_MACOS_VERSION}/" build.py
           sed -i -e "s/platform :osx, '.*'/platform :osx, '${MIN_MACOS_VERSION}'/" flutter/macos/Podfile
@@ -162,7 +161,7 @@ jobs:
         run: |
           rm -rf dmg_stage
           mkdir -p dmg_stage
-          cp -R ./flutter/build/macos/Build/Products/Release/ITHelp4You.app "dmg_stage/${{ github.event.inputs.app_name }}.app"
+          cp -R ./flutter/build/macos/Build/Products/Release/RustDesk.app "dmg_stage/${{ github.event.inputs.app_name }}.app"
           ln -s /Applications dmg_stage/Applications
           hdiutil create -volname "${{ github.event.inputs.app_name }}" -srcfolder dmg_stage -ov -format UDZO "ITHelp-macos-${{ matrix.job.arch }}.dmg"
 
