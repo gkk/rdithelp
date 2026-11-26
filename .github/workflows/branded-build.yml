@@ -97,7 +97,7 @@ jobs:
       - name: Patch flutter
         if: ${{ matrix.job.arch == 'x86_64' }}
         run: |
-          cd $(dirname $(dirname $(which flutter)))
+          cd $(dirname $(dirname$(which flutter)))
           git apply ${{ github.workspace }}/.github/patches/flutter_3.24.4_dropdown_menu_enableFilter.diff || true
 
       - name: Workaround for flutter issue
@@ -125,48 +125,4 @@ jobs:
           prefix-key: ${{ matrix.job.os }}
 
       - name: Restore bridge files
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.job.arch == 'aarch64' && 'bridge-artifact-flutter-3.44' || 'bridge-artifact' }}
-          path: ./
-
-      - name: Setup vcpkg with Github Actions binary cache
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
-          doNotCache: false
-
-      - name: Install vcpkg dependencies
-        run: |
-          ${{ matrix.job.arch-prefix }} $VCPKG_ROOT/vcpkg install --triplet ${{ matrix.job.vcpkg-triplet }} --x-install-root="$VCPKG_ROOT/installed"
-
-      - name: Build rustdesk
-        run: |
-          MIN_MACOS_VERSION="12.3"
-          sed -i -e "s/MACOSX_DEPLOYMENT_TARGET\=[0-9]*.[0-9]*/MACOSX_DEPLOYMENT_TARGET=${MIN_MACOS_VERSION}/" build.py
-          sed -i -e "s/platform :osx, '.*'/platform :osx, '${MIN_MACOS_VERSION}'/" flutter/macos/Podfile
-          sed -i -e "s/osx_minimum_system_version = \"[0-9]*.[0-9]*\"/osx_minimum_system_version = \"${MIN_MACOS_VERSION}\"/" Cargo.toml
-          sed -i -e "s/MACOSX_DEPLOYMENT_TARGET = [0-9]*.[0-9]*;/MACOSX_DEPLOYMENT_TARGET = ${MIN_MACOS_VERSION};/" flutter/macos/Runner.xcodeproj/project.pbxproj
-          python3 -c "
-          p = 'flutter/macos/Podfile'
-          s = open(p).read()
-          hook = 'post_install do |installer|\n  installer.pods_project.targets.each do |t|\n    t.build_configurations.each do |c|\n      c.build_settings[\"MACOSX_DEPLOYMENT_TARGET\"] = \"12.3\"\n    end\n  end'
-          s = s.replace('post_install do |installer|', hook, 1) if 'post_install do |installer|' in s else s + '\n' + hook + '\nend\n'
-          open(p, 'w').write(s)
-          "
-          echo "MACOSX_DEPLOYMENT_TARGET=${MIN_MACOS_VERSION}" >> "$GITHUB_ENV"
-          ${{ matrix.job.arch-prefix }} ./build.py --flutter --hwcodec --unix-file-copy-paste ${{ matrix.job.extra-build-args }}
-
-      - name: Create DMG
-        run: |
-          rm -rf dmg_stage
-          mkdir -p dmg_stage
-          cp -R ./flutter/build/macos/Build/Products/Release/RustDesk.app "dmg_stage/${{ github.event.inputs.app_name }}.app"
-          ln -s /Applications dmg_stage/Applications
-          hdiutil create -volname "${{ github.event.inputs.app_name }}" -srcfolder dmg_stage -ov -format UDZO "ITHelp-macos-${{ matrix.job.arch }}.dmg"
-
-      - name: Upload macOS DMG
-        uses: actions/upload-artifact@v4
-        with:
-          name: ITHelp-macos-${{ matrix.job.arch }}
-          path: ITHelp-macos-${{ matrix.job.arch }}.dmg
+        uses: actions/download-artifact@
